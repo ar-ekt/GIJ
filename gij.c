@@ -360,8 +360,39 @@ int try_Unselect(char file[], char selected[][MAX_ARRAY_SIZE], int selected_Len)
 	return 0;
 }
 
-int select_All(char path[], char selected[][MAX_ARRAY_SIZE], int selected_Len){
+int is_Dir(char pre[], char file[]){
+	if(chdir(file))
+		return 0;
+	chdir(pre);
 	return 1;
+}
+
+int select_All(char path[], char cur_Dir[], char selected[][MAX_ARRAY_SIZE], int selected_Len){
+	char file_Name[MAX_ARRAY_SIZE];
+	char temp_Dir[MAX_ARRAY_SIZE];
+	
+	struct dirent *de; 			// explained in __generate__ function
+	DIR *dr = opendir(cur_Dir); // pointer to current directory
+	
+	while ((de = readdir(dr)) != NULL){
+		strcpy(file_Name, de->d_name);
+		
+		// "." and ".." are directory paths that are always present
+		if(!strcasecmp(file_Name, "..") || !strcasecmp(file_Name, ".") || !strcasecmp(file_Name, "vc_data"))
+			continue;
+			
+		if(!strcmp(cur_Dir, "."))
+			strcpy(temp_Dir, file_Name);
+		else
+			sprintf(temp_Dir, "%s\\%s", cur_Dir, file_Name);
+			
+		if(is_Dir(path, temp_Dir)) // check file is directory or not
+			selected_Len = select_All(path, temp_Dir, selected, selected_Len);
+		else
+			strcpy(selected[selected_Len++], temp_Dir);
+	}
+	
+	return selected_Len;
 }
 
 int check_File(char path[], char file[]){
@@ -531,7 +562,9 @@ int main(){
 					printf("unknown command!\n");
 				else{
 					int temp_Len = selected_Len;
-					selected_Len = select_All(path, selected, selected_Len);
+					strcpy(buffer, ".");
+					selected_Len = 0;
+					selected_Len = select_All(path, buffer, selected, selected_Len);
 					printf("all files in directory and its subdirectories selected succesfully\n\n");
 					printf("%d file selected succesfully\n", selected_Len - temp_Len);
 				}
