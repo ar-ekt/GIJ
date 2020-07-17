@@ -195,7 +195,7 @@ void reset(char path[], int commitId){
 					remove(path_Ori);
 			}
 			
-			sprintf(path_Ori, "%s\\vc_data\\files\\%s, path, status[index].name);
+			sprintf(path_Ori, "%s\\vc_data\\files\\%s, path", status[index].name);
 			sprintf(name_Ori, "%d%s", status[index].all_Ver[commitId-1], formatV);
 			make_Copy(path_Ori, name_Ori, path, name_Lashed);
 			
@@ -256,6 +256,7 @@ void commit(char path[], char selected[][MAX_ARRAY_SIZE], int numberOS){
 		if(indInVer == -1){
 			verOS = 1;
 			
+			puts(pathOS);
 			mkdir(pathOS);
 			
 			sprintf(buffer, "%d%s", verOS, formatOS);
@@ -279,7 +280,6 @@ void commit(char path[], char selected[][MAX_ARRAY_SIZE], int numberOS){
 			make_Copy(path, selected[indexOS], pathOS, buffer);
 			
 			sprintf(command, "diff0.exe %s\\%d%s %s\\%d%s %s\\%d%s", pathOS, verOS, formatOS, pathOS, verOS+1, formatOS, pathOS, verOS+1, ".txt");
-			puts(command);
 			system(command);
 			
 			if(verOS != 1){
@@ -305,6 +305,8 @@ void log_(char path[]){
 	
 	status_Get(path);
 	
+	system("cls");
+	
 	if(number_Of_Commit == 0)
 		printf("nothing to show\n");
 	
@@ -313,7 +315,7 @@ void log_(char path[]){
 		sprintf(pathD, "%s\\vc_data\\descriptions\\%d.txt", path, index+1);
 		des = fopen(pathD, "r");
 		fgets(description, sizeof(description), des);
-		printf("description: %s\n", description);
+		printf("description: %s\n\n", description);
 		fclose(des);
 	}
 }
@@ -333,10 +335,13 @@ void status_(char path[], char selected[][MAX_ARRAY_SIZE], int selected_Len){
 			hash_2_Lash(status[index].name, name_Lashed);
 			printf("%s: \t %s\n", name_Lashed, conv_Situation[status[index].last_Situation+1]);
 		}
+}
+
+void show_Selected(char selected[][MAX_ARRAY_SIZE], int selected_Len){
+	int index;
+	system("cls");
 	
-	printf("\n\n********************************\n\n");
-		
-	printf("\n\nSelected files\n\n");
+	printf("Selected files\n\n");
 	if(selected_Len == 0)
 		printf("no file selected\n");
 	for(index=0; index<selected_Len; index++)
@@ -362,7 +367,6 @@ int select_All(char path[], char selected[][MAX_ARRAY_SIZE], int selected_Len){
 int check_File(char path[], char file[]){
 	char pathF[MAX_ARRAY_SIZE];
 	sprintf(pathF, "%s\\%s", path, file);
-	puts(pathF);
 	
 	FILE *f = fopen(pathF, "r");
 	if(f != NULL){
@@ -414,6 +418,7 @@ void make_Path(char path_list[][MAX_ARRAY_SIZE], int pl, char path[]){
 }
 
 int main(){
+	char conv_Situation[][MAX_ARRAY_SIZE] = {"deleted", "unchanged", "changed", "recently"};
 	char line[MAX_ARRAY_SIZE];
 	char input[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
 	char path[MAX_ARRAY_SIZE];
@@ -442,41 +447,72 @@ int main(){
 			chdir("..");
 			init = 1;
 		}
-			
+		
+		getcwd(path, sizeof(path));
+		
+		printf("\n\n");
+		
 		if(!strcasecmp(input[0], "cd")){
 			if(input_Len > 2)
 				printf("Invalid command!\n");
-			else{
-				if(!chdir(input[1]))
+			else if(!chdir(input[1])){
+				printf("directory changed succesfully!\n");
+				if(strcmp(input[1], "."))
 					init = 0;
 			}
-			continue;
+			else
+				printf("invalid path!\n");
 		}
 		
-		if(!strcasecmp(input[0], "help")){
-			int n = 1;
+		else if(!strcasecmp(input[0], "mkdir")){
+			if(input_Len > 2)
+				printf("Invalid command!\n");
+			else if(!mkdir(input[1]))
+				printf("%s directory made succesfully!\n", input[1]);
+			else
+				printf("%s directory already exist|!\n", input[1]);
 		}
 		
-		if(!strcasecmp(input[0], "init")){
-			if(input_Len > 1)
-				printf("unknown command!\n");
+		else if(!strcasecmp(input[0], "help")){
+			if(input_Len != 1)
+				printf("unknown command\n");
 			else{
-				if(!mkdir("vc_data")){
-					mkdir("vc_data\\files");
-					mkdir("vc_data\\descriptions");
-					FILE *st = fopen("vc_data\\status.txt", "w");
-					fprintf(st, "%d\n%d\n", 0, 0);
-					fclose(st);
-				}
-				else{
-					printf("already initialized\n");
-				}
-				init = 1;
+				system("cls");
+				printf(
+					"cd <path>\t\t\t for change directory\n\n"
+					"mkdir <name>\t\t\t make directory by given name in current directory\n\n"
+					"init\t\t\t\t initial current directory\n\n"
+					"status\t\t\t\t show situation of files\n\n"
+					"select <file1> <file2> ...\t select given files\n\n"
+					"select -all\t\t\t select all files in current directory and sub-directories\n\n"
+					"unselect <file1> <file2> ...\t unselect given files\n\n"
+					"unselect -all\t\t\t unselect all selected files\n\n"
+					"selected\t show selected files\n\n"
+					"commit <description>\t\t commit selected files\n\n"
+					"log\t\t\t\t show allthings about commits\n\n"
+					"reset <commit-Id>\t\t bla bla bla\n\n"
+					"stash <commit-Id>\t\t bla bla bla\n\n"
+					"stash pop\t\t\t bla bla bla\n\n"
+				);
 			}
 		}
-		getcwd(path, sizeof(path));
 		
-		if(!strcasecmp(input[0], "status")){
+		else if(!strcasecmp(input[0], "init")){
+			if(input_Len > 1)
+				printf("unknown command!\n");
+			else if(!mkdir("vc_data")){
+				mkdir("vc_data\\files");
+				mkdir("vc_data\\descriptions");
+				FILE *st = fopen("vc_data\\status.txt", "w");
+				fprintf(st, "%d\n%d\n", 0, 0);
+				fclose(st);
+			}
+			else
+				printf("already initialized\n");
+			init = 1;
+		}
+		
+		else if(!strcasecmp(input[0], "status")){
 			if(input_Len > 1)
 				printf("unknown command!\n");
 			else if(!init)
@@ -485,7 +521,7 @@ int main(){
 				status_(path, selected, selected_Len);
 		}
 		
-		if(!strcasecmp(input[0], "select")){
+		else if(!strcasecmp(input[0], "select")){
 			if(input_Len == 1)
 				printf("select what?!!\n");
 			else if(!init)
@@ -493,20 +529,26 @@ int main(){
 			else if(!strcmp(input[1], "-all")){
 				if(input_Len != 2)
 					printf("unknown command!\n");
-				else
+				else{
+					int temp_Len = selected_Len;
 					selected_Len = select_All(path, selected, selected_Len);
+					printf("all files in directory and its subdirectories selected succesfully\n\n");
+					printf("%d file selected succesfully\n", selected_Len - temp_Len);
+				}
 			}
 			else{
 				for(index=1; index<input_Len; index++){
-					if(check_File(path, input[index]))
+					if(check_File(path, input[index])){
 						strcpy(selected[selected_Len++], input[index]);
-					else{
-						printf("cannot find %s\n", input[index]);
+						printf("%s file selected succesfully\n\n", selected[selected_Len-1]);
 					}
+					else
+						printf("cannot find %s!\n\n", input[index]);
 				}
 			}
 		}
-		if(!strcasecmp(input[0], "unselect")){
+		
+		else if(!strcasecmp(input[0], "unselect")){
 			if(input_Len == 1)
 				printf("unselect what?!!\n");
 			else if(!init)
@@ -514,45 +556,66 @@ int main(){
 			else if(!strcmp(input[1], "-all")){
 				if(input_Len != 2)
 					printf("unknown command!\n");
-				else
+				else{
+					printf("all selected files unselected succesfully\n");
 					selected_Len = 0;
+				}
 			}
 			else{
 				for(index=1; index<input_Len; index++){
 					if(check_File(path, input[index])){
 						if(!try_Unselect(input[index], selected, selected_Len))
-							printf("%s has not been selected\n", input[index]);
+							printf("%s has not been selected\n\n", input[index]);
+						else
+							printf("%s unselected succesfully\n\n", input[index]);
 					}
 					else{
-						printf("cannot find %s\n", input[index]);
+						printf("cannot find %s\n\n", input[index]);
 					}
 				}
 			}
 		}
-		if(!strcasecmp(input[0], "commit")){
-			if(input_Len == 1)
+		
+		else if(!strcasecmp(input[0], "selected")){
+			if(input_Len > 1)
+				printf("unknown command\n");
+			else
+				show_Selected(selected, selected_Len);
+		}
+		
+		else if(!strcasecmp(input[0], "commit")){
+			if(selected_Len == 0)
+				printf("no file selected!\n");
+			else if(input_Len == 1)
 				printf("add description!\n");
 			else if(!init)
 				printf("no permission!\n");
 			else{
-				if(selected_Len == 0)
-					printf("no file selected!\n");
-				else{
-					// add description
-					sprintf(buffer, "%s\\vc_data\\descriptions\\%d.txt", path, number_Of_Commit+1);
-					strcpy(description, input[0]);
-					for(index=2; index<input_Len; index++){
-						strcat(description, input[index]);
-						strcat(description, " ");
-					}
-					FILE *des = fopen(buffer, "w");
-					fprintf(des, "%s", description);
-					fclose(des);
-					commit(path, selected, selected_Len);
+				// add description
+				sprintf(buffer, "%s\\vc_data\\descriptions\\%d.txt", path, number_Of_Commit+1);
+				strcpy(description, input[1]);
+				for(index=2; index<input_Len; index++){
+					strcat(description, input[index]);
+					strcat(description, " ");
 				}
+				FILE *des = fopen(buffer, "w");
+				fprintf(des, "%s", description);
+				fclose(des);
+				
+				commit(path, selected, selected_Len);
+				
+				int version_Of_S;
+				for(index=0; index<selected_Len; index++){
+					printf("%s commited succesfully\n", selected[index]);
+					version_Of_S = dict_Index(selected[index]);
+					printf("last version: %d\n", status[version_Of_S].last_Ver);
+					printf("last situation: %d\n\n", conv_Situation[status[version_Of_S].last_Situation+1]);
+				}
+				selected_Len = 0;
 			}
 		}
-		if(!strcasecmp(input[0], "log")){
+		
+		else if(!strcasecmp(input[0], "log")){
 			if(input_Len > 1)
 				printf("unknown command!\n");
 			else if(!init)
@@ -560,27 +623,39 @@ int main(){
 			else
 				log_(path);
 		}
-		if(!strcasecmp(input[0], "reset")){
+		
+		else if(!strcasecmp(input[0], "reset")){
 			if(input_Len != 2)
 				printf("unknown command!\n");
 			else if(!init)
 				printf("no permission!\n");
+			if(isNumerical(input[1])){
+				int commitId = atoi(input[1]);
+				if(1 <= commitId && commitId < number_Of_Commit){
+					reset(path, commitId);
+					printf("reser done succesfully\n");
+				}
+				else if(commitId == 0){
+					int n = 1;
+				}
+				else
+					printf("Invalid commit-Id!\n");
+			}
 			else{
-				if(isNumerical(input[1])){
-					int commitId = atoi(input[1]);
-					if(1 <= commitId && commitId < number_Of_Commit)
-						reset(path, commitId);
-					else
-						printf("Invalid commit-Id!\n");
-				}
-				else{
-					printf("commit-Id must be numerical!\n");
-				}
+				printf("commit-Id must be numerical!\n");
 			}
 		}
-		if(!strcasecmp(input[0], "stash")){
-			int n = 1;
+		
+		else if(!strcasecmp(input[0], "stash")){
+			if(input_Len != 2)
+				printf("unknown command!\n");
+			else if(!init)
+				printf("no permission!\n");
 		}
+		
+		else
+			printf("unknown command\n");
+		
 		printf("\n\n\n");
 		system("pause");
 	}
