@@ -27,7 +27,7 @@ void get_Format(char file[], char format[]){
 
 void make_Copy(char origin[], char fileO[], char destination[], char fileD[]){
 	char command[MAX_ARRAY_SIZE];
-	sprintf(command, "copy \%s %s\\%s > E#R#R#O#R.txt", origin, fileO, destination, fileD);
+	sprintf(command, "copy %s\\%s %s\\%s > E#R#R#O#R.txt", origin, fileO, destination, fileD);
 	system(command);
 	remove("E#R#R#O#R.txt");
 }
