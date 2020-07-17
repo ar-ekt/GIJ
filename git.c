@@ -7,7 +7,7 @@
 
 int temp_Situation[MAX_ARRAY_SIZE];
 int number_Of_Commit;
-int status_Len = 4;
+int status_Len;
 struct dict{
 	int last_Ver;
 	int last_Situation;
