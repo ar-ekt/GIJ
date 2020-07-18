@@ -60,10 +60,9 @@ void get_Format(char file[], char format[]){
 
 void make_Copy(char origin[], char fileO[], char destination[], char fileD[]){
 	char command[MAX_ARRAY_SIZE];
-	sprintf(command, "copy %s\\%s %s\\%s", origin, fileO, destination, fileD);
-	puts(command);
+	sprintf(command, "copy %s\\%s %s\\%s > M#S#G.txt", origin, fileO, destination, fileD);
 	system(command);
-//	remove("E#R#R#O#R.txt");
+	remove("M#S#G.txt");
 }
 
 /** 
@@ -709,7 +708,7 @@ int main(){
 					"selected\t\t\t show selected files\n\n"
 					"commit <description>\t\t commit selected files\n\n"
 					"log\t\t\t\t show allthings about commits\n\n"
-					"reset <commit-Id>\t\t bla bla bla\n\n"
+					"reset <commit-Id>\t\t reset files to id-th commit\n\n"
 					"stash <commit-Id>\t\t bla bla bla\n\n"
 					"stash pop\t\t\t bla bla bla\n\n"
 				);
@@ -725,6 +724,7 @@ int main(){
 				FILE *st = fopen("vc_data\\status.txt", "w");
 				fprintf(st, "%d\n%d\n", 0, 0);
 				fclose(st);
+				printf("initialized succesfully\n");
 			}
 			else
 				printf("already initialized\n");
@@ -828,7 +828,8 @@ int main(){
 				int version_Of_S;
 				for(index=0; index<selected_Len; index++){
 					printf("%s commited succesfully\n", selected[index]);
-					version_Of_S = dict_Index(selected[index]);
+					lash_2_Hash(selected[index], buffer);
+					version_Of_S = dict_Index(buffer);
 					printf("last version: %d\n\n", status[version_Of_S].last_Ver);
 				}
 				selected_Len = 0;
