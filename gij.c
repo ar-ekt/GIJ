@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
+#include <windows.h>
 
 #define MAX_ARRAY_SIZE 300
 
@@ -30,6 +31,62 @@ struct dict{
 	int all_Ver[MAX_ARRAY_SIZE];
 	char name[MAX_ARRAY_SIZE];
 } status[MAX_ARRAY_SIZE];
+
+/** 
+ * This function gets a color's name and turns output color into it
+ * 
+ * @param color a color's name
+ *
+ * @return integer 1 in case of success and 0 in opposite case
+ *
+ */
+
+int changeColor(char color[]){
+	
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	
+	if (!strcmp(color,"green"))
+		SetConsoleTextAttribute(hConsole, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
+		
+	else if (!strcmp(color,"red"))
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED);
+		
+	else if (!strcmp(color,"white"))
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
+		
+	else if (!strcmp(color,"blue"))
+		SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE);
+		
+	else if (!strcmp(color,"yellow"))
+		SetConsoleTextAttribute(hConsole, FOREGROUND_RED|FOREGROUND_GREEN);
+		
+	else if (!strcmp(color,"purple"))
+		SetConsoleTextAttribute(hConsole, FOREGROUND_INTENSITY|FOREGROUND_RED|FOREGROUND_BLUE);
+		
+	else if (!strcmp(color,"light-blue"))
+		SetConsoleTextAttribute(hConsole, FOREGROUND_INTENSITY|FOREGROUND_BLUE);
+		
+	else
+		return 0;
+		
+	return 1;
+}
+
+/** 
+ * This function gets two color MACROs defiened in mainGlobal.h and a message to be printed in first color and
+ * then change color to the second color
+ * 
+ * @param firstColor should be color MACRO defiened in mainGlobal.h we want message to be printed in that color
+ * @param secondColor should be color MACRO defiened in mainGlobal.h we want get nack to after printing the message
+ * @param message is the message itself we want to print
+ *
+ */
+
+void printMessage(char message[], char firstColor[]){
+	changeColor(firstColor);
+	printf(message);
+	changeColor("white");
+}
 
 /** 
  * This function get name of a file and return format of it in a string
@@ -414,6 +471,7 @@ void log_(char path[]){
 	char pathD[MAX_ARRAY_SIZE];
 	char description[MAX_ARRAY_SIZE];
 	char name_Lashed[MAX_ARRAY_SIZE];
+	char message[MAX_ARRAY_SIZE];
 	FILE *des;
 	int index, indexF;
 	
@@ -421,25 +479,31 @@ void log_(char path[]){
 	
 	system("cls");
 	
-	printf("\nLogs\n\n");
+	printMessage("\nLogs\n\n", "blue");
 	if(number_Of_Commit == 0)
-		printf("nothing to show\n");
+		printMessage("nothing to show\n", "yellow");
 	for(index=0; index<number_Of_Commit; index++){
-		printf("commit-Id: %d\n", index+1);
+		sprintf(message, "commit-Id: %d\n", index+1);
+		printMessage(message, "purple");
 		sprintf(pathD, "%s\\vc_data\\descriptions\\%d.txt", path, index+1);
 		des = fopen(pathD, "r");
 		fgets(description, sizeof(description), des);
-		printf("description: %s\n\n", description);
+		sprintf(message, "description: %s\n\n", description);
+		printMessage(message, "purple");
 		fclose(des);
 		for(indexF=0; indexF<status_Len; indexF++){
 			if(-1 <= status[indexF].all_Situation[index] && status[indexF].all_Situation[index] <= 2){
 				hash_2_Lash(status[indexF].name, name_Lashed);
-				printf("%s \n    %s", name_Lashed, conv_Situation[status[indexF].all_Situation[index]+1]);
-				printf("\t\\  version: %d\n", status[indexF].all_Ver[index]);
+				sprintf(message, "%s\n", name_Lashed);
+				printMessage(message, "light-blue");
+				sprintf(message, "    %s", conv_Situation[status[indexF].all_Situation[index]+1]);
+				printMessage(message, "light-blue");
+				sprintf(message, "\t\\  version: %d\n", status[indexF].all_Ver[index]);
+				printMessage(message, "light-blue");
 			}
 		}
 		if(index != number_Of_Commit)
-			printf("\n*****************************************\n\n");
+			printMessage("\n*****************************************\n\n", "yellow");
 	}
 }
 
@@ -453,20 +517,24 @@ void log_(char path[]){
 void status_(char path[]){
 	char name_Lashed[MAX_ARRAY_SIZE];
 	char conv_Situation[][MAX_ARRAY_SIZE] = {"deleted", "unchanged", "changed", "recently"};
+	char message[MAX_ARRAY_SIZE];
 	int index;
 	
 	status_Get(path);
 	
 	system("cls");
 	
-	printf("\nStatus of files\n\n");
+	printMessage("\nStatus of files\n\n", "green");
 	if(status_Len == 0)
-		printf("nothing to show\n");
+		printMessage("nothing to show\n", "yellow");
 	for(index=0; index<status_Len; index++)
 		if(-1 <= status[index].last_Situation && status[index].last_Situation <= 2){
 			hash_2_Lash(status[index].name, name_Lashed);
-			printf("%s \n    %s", name_Lashed, conv_Situation[status[index].last_Situation+1]);
-			printf("\t\\  version: %d\n\n", status[index].last_Ver);
+			sprintf(message, "%s \n    %s\t\\  version: %d\n\n", name_Lashed, conv_Situation[status[index].last_Situation+1], status[index].last_Ver);
+			if(index % 2 == 0)
+				printMessage(message, "light-blue");
+			else
+				printMessage(message, "purple");
 		}
 }
 
@@ -480,13 +548,16 @@ void status_(char path[]){
 
 void show_Selected(char selected[][MAX_ARRAY_SIZE], int selected_Len){
 	int index;
+	char message[MAX_ARRAY_SIZE];
 	system("cls");
 	
-	printf("Selected files\n\n\n");
+	printMessage("\nSelected files\n\n\n", "blue");
 	if(selected_Len == 0)
-		printf("no file selected\n");
-	for(index=0; index<selected_Len; index++)
-		printf("%s\n\n", selected[index]);
+		printMessage("no file selected\n", "yellow");
+	for(index=0; index<selected_Len; index++){
+		sprintf(message, "%s\n\n", selected[index]);
+		printMessage(message, "light-blue");
+	}
 }
 
 /** 
@@ -596,17 +667,16 @@ int check_File(char path[], char file[]){
  * 
  * @param number is the string needed to be checked
  *
- * @return integer 0 if "number" string is numerical otherwise 1
+ * @return integer 1 if "number" string is numerical otherwise 0
  *
  */
 
 int isNumerical(char number[]){
-	int i=0;
-	
-	while(number[i])
-		if(!isdigit(number[i++]))
-			return 1;
-	return 0; // 1 for ok
+	int index=0;
+	while(number[index])
+		if(!isdigit(number[index++]))
+			return 0;
+	return 1;
 }
 
 /** 
@@ -639,7 +709,7 @@ void show_Screen(){
 				"\t\t\t\t\t|          ||         ||        |   \n"
 				"\t\t\t\t\t\\__________||_________|\\________/ \n"
 				"\n\n";
-	puts(gij);
+	printMessage(gij, "blue");
 	printf("\t\t\t\t    >>> ");
 }
 
@@ -650,6 +720,7 @@ int main(){
 	char path[MAX_ARRAY_SIZE];
 	char selected[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
 	char description[MAX_ARRAY_SIZE];
+	char message[MAX_ARRAY_SIZE];
 	char buffer[MAX_ARRAY_SIZE];
 	
 	int selected_Len = 0;
@@ -683,31 +754,39 @@ int main(){
 		
 		if(!strcasecmp(input[0], "cd")){
 			if(input_Len > 2)
-				printf("Invalid command!\n");
+				printMessage("Invalid command!\n", "red");
+			else if(!strcmp(input[1], "vc_data") && init)
+				printMessage("no permission!\n", "yellow");
 			else if(!chdir(input[1])){
-				printf("directory changed succesfully!\n");
+				printMessage("directory changed succesfully!\n", "green");
 				if(strcmp(input[1], "."))
 					init = 0;
 			}
 			else
-				printf("invalid path!\n");
+				printMessage("invalid path!\n", "red");
 		}
 		
 		else if(!strcasecmp(input[0], "mkdir")){
 			if(input_Len > 2)
-				printf("Invalid command!\n");
-			else if(!mkdir(input[1]))
-				printf("%s directory made succesfully!\n", input[1]);
-			else
-				printf("%s directory already exist|!\n", input[1]);
+				printMessage("Invalid command!\n", "red");
+			else if(!strcmp(input[1], "vc_data"))
+				printMessage("no permission!\n", "yellow");
+			else if(!mkdir(input[1])){
+				sprintf(message, "%s directory made succesfully!\n", input[1]);
+				printMessage(message, "green");
+			}
+			else{
+				sprintf(message, "%s directory already exist|!\n", input[1]);
+				printMessage(message, "yellow");
+			}
 		}
 		
 		else if(!strcasecmp(input[0], "help")){
 			if(input_Len != 1)
-				printf("unknown command\n");
+				printMessage("unknown command\n", "red");
 			else{
 				system("cls");
-				printf(
+				printMessage(
 					"cd <path>\t\t\t for change directory\n\n"
 					"mkdir <name>\t\t\t make directory by given name in current directory\n\n"
 					"init\t\t\t\t initial current directory\n\n"
@@ -722,87 +801,97 @@ int main(){
 					"reset <commit-Id>\t\t reset files to id-th commit\n\n"
 					"stash <commit-Id>\t\t bla bla bla\n\n"
 					"stash pop\t\t\t bla bla bla\n\n"
+					, "blue"
 				);
 			}
 		}
 		
 		else if(!strcasecmp(input[0], "init")){
 			if(input_Len > 1)
-				printf("unknown command!\n");
+				printMessage("unknown command!\n", "red");
 			else if(!mkdir("vc_data")){
 				mkdir("vc_data\\files");
 				mkdir("vc_data\\descriptions");
 				FILE *st = fopen("vc_data\\status.txt", "w");
 				fprintf(st, "%d\n%d\n", 0, 0);
 				fclose(st);
-				printf("initialized succesfully\n");
+				printMessage("initialized succesfully\n", "green");
 			}
 			else
-				printf("already initialized\n");
+				printMessage("already initialized\n", "yellow");
 			init = 1;
 		}
 		
 		else if(!strcasecmp(input[0], "status")){
 			if(input_Len > 1)
-				printf("unknown command!\n");
+				printMessage("unknown command!\n", "red");
 			else if(!init)
-				printf("no permission!\n");
+				printMessage("no permission!\n", "yellow");
 			else
 				status_(path);
 		}
 		
 		else if(!strcasecmp(input[0], "select")){
 			if(input_Len == 1)
-				printf("select what?!!\n");
+				printMessage("select what?!!\n", "red");
 			else if(!init)
-				printf("no permission!\n");
+				printMessage("no permission!\n", "yellow");
 			else if(!strcmp(input[1], "-all")){
 				if(input_Len != 2)
-					printf("unknown command!\n");
+					printMessage("unknown command!\n", "red");
 				else{
 					int temp_Len = selected_Len;
 					strcpy(buffer, ".");
 					selected_Len = 0;
 					selected_Len = select_All(path, buffer, selected, selected_Len);
-					printf("all files in directory and its subdirectories selected succesfully\n\n");
-					printf("%d file selected succesfully\n", selected_Len - temp_Len);
+					printMessage("all files in directory and its subdirectories selected succesfully\n\n", "green");
+					sprintf(message, "%d file selected succesfully\n", selected_Len - temp_Len);
+					printMessage(message, "green");
 				}
 			}
 			else{
 				for(index=1; index<input_Len; index++){
 					if(check_File(path, input[index])){
 						strcpy(selected[selected_Len++], input[index]);
-						printf("%s selected succesfully\n\n", selected[selected_Len-1]);
+						sprintf(message, "%s selected succesfully\n\n", selected[selected_Len-1]);
+						printMessage(message, "green");
 					}
-					else
-						printf("cannot find %s!\n\n", input[index]);
+					else{
+						sprintf(message, "cannot find %s!\n\n", input[index]);
+						printMessage(message, "red");
+					}
 				}
 			}
 		}
 		
 		else if(!strcasecmp(input[0], "unselect")){
 			if(input_Len == 1)
-				printf("unselect what?!!\n");
+				printMessage("unselect what?!!\n", "red");
 			else if(!init)
-				printf("no permission!\n");
+				printMessage("no permission!\n", "yellow");
 			else if(!strcmp(input[1], "-all")){
 				if(input_Len != 2)
-					printf("unknown command!\n");
+					printMessage("unknown command!\n", "red");
 				else{
 					selected_Len = 0;
-					printf("all selected files unselected succesfully\n");
+					printMessage("all selected files unselected succesfully\n", "green");
 				}
 			}
 			else{
 				for(index=1; index<input_Len; index++){
 					if(check_File(path, input[index])){
-						if(!try_Unselect(input[index], selected, selected_Len))
-							printf("%s has not been selected\n\n", input[index]);
-						else
-							printf("%s unselected succesfully\n\n", input[index]);
+						if(!try_Unselect(input[index], selected, selected_Len)){
+							sprintf(message, "%s has not been selected\n\n", input[index]);
+							printMessage(message, "yellow");
+						}
+						else{
+							sprintf(message, "%s unselected succesfully\n\n", input[index]);
+							printMessage(message, "green");
+						}
 					}
 					else{
-						printf("cannot find %s\n\n", input[index]);
+						sprintf(message, "cannot find %s\n\n", input[index]);
+						printMessage(message, "red");
 					}
 				}
 			}
@@ -810,18 +899,18 @@ int main(){
 		
 		else if(!strcasecmp(input[0], "selected")){
 			if(input_Len > 1)
-				printf("unknown command\n");
+				printMessage("unknown command\n", "red");
 			else
 				show_Selected(selected, selected_Len);
 		}
 		
 		else if(!strcasecmp(input[0], "commit")){
 			if(selected_Len == 0)
-				printf("no file selected!\n");
+				printMessage("no file selected!\n", "red");
 			else if(input_Len == 1)
-				printf("add description!\n");
+				printMessage("add description!\n", "red");
 			else if(!init)
-				printf("no permission!\n");
+				printMessage("no permission!\n", "yellow");
 			else{
 				// add description
 				sprintf(buffer, "%s\\vc_data\\descriptions\\%d.txt", path, number_Of_Commit+1);
@@ -838,10 +927,12 @@ int main(){
 				
 				int version_Of_S;
 				for(index=0; index<selected_Len; index++){
-					printf("%s commited succesfully\n", selected[index]);
+					sprintf(message, "%s commited succesfully\n", selected[index]);
+					printMessage(message, "green");
 					lash_2_Hash(selected[index], buffer);
 					version_Of_S = dict_Index(buffer);
-					printf("last version: %d\n\n", status[version_Of_S].last_Ver);
+					sprintf(message, "last version: %d\n\n", status[version_Of_S].last_Ver);
+					printMessage(message, "green");
 				}
 				selected_Len = 0;
 			}
@@ -849,44 +940,44 @@ int main(){
 		
 		else if(!strcasecmp(input[0], "log")){
 			if(input_Len > 1)
-				printf("unknown command!\n");
+				printMessage("unknown command!\n", "red");
 			else if(!init)
-				printf("no permission!\n");
+				printMessage("no permission!\n", "yellow");
 			else
 				log_(path);
 		}
 		
 		else if(!strcasecmp(input[0], "reset")){
 			if(input_Len != 2)
-				printf("unknown command!\n");
+				printMessage("unknown command!\n", "red");
 			else if(!init)
-				printf("no permission!\n");
-			if(!isNumerical(input[1])){
+				printMessage("no permission!\n", "yellow");
+			if(isNumerical(input[1])){
 				int commitId = atoi(input[1]);
 				if(1 <= commitId && commitId < number_Of_Commit){
 					reset(path, commitId);
-					printf("reset done succesfully\n");
+					printMessage("reset done succesfully\n", "green");
 				}
 				else if(commitId == 0){
 					int n = 1;
 				}
 				else
-					printf("Invalid commit-Id!\n");
+					printMessage("Invalid commit-Id!\n", "red");
 			}
 			else{
-				printf("commit-Id must be numerical!\n");
+				printMessage("commit-Id must be numerical!\n", "red");
 			}
 		}
 		
 		else if(!strcasecmp(input[0], "stash")){
 			if(input_Len != 2)
-				printf("unknown command!\n");
+				printMessage("unknown command!\n", "red");
 			else if(!init)
-				printf("no permission!\n");
+				printMessage("no permission!\n", "yellow");
 		}
 		
 		else
-			printf("unknown command\n");
+			printMessage("unknown command!\n", "red");
 		
 		printf("\n\n\n");
 		system("pause");
