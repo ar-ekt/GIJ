@@ -410,8 +410,10 @@ void commit(char path[], char selected[][MAX_ARRAY_SIZE], int numberOS){
  */
 
 void log_(char path[]){
+	char conv_Situation[][MAX_ARRAY_SIZE] = {"deleted", "unchanged", "changed", "recently"};
 	char pathD[MAX_ARRAY_SIZE];
 	char description[MAX_ARRAY_SIZE];
+	char name_Lashed[MAX_ARRAY_SIZE];
 	FILE *des;
 	int index, indexF;
 	
@@ -429,6 +431,15 @@ void log_(char path[]){
 		fgets(description, sizeof(description), des);
 		printf("description: %s\n\n", description);
 		fclose(des);
+		for(indexF=0; indexF<status_Len; indexF++){
+			if(-1 <= status[indexF].all_Situation[index] && status[indexF].all_Situation[index] <= 2){
+				hash_2_Lash(status[indexF].name, name_Lashed);
+				printf("%s \n    %s", name_Lashed, conv_Situation[status[indexF].all_Situation[index]+1]);
+				printf("\t\\  version: %d\n", status[indexF].all_Ver[index]);
+			}
+		}
+		if(index != number_Of_Commit)
+			printf("\n*****************************************\n\n");
 	}
 }
 
@@ -454,7 +465,8 @@ void status_(char path[]){
 	for(index=0; index<status_Len; index++)
 		if(-1 <= status[index].last_Situation && status[index].last_Situation <= 2){
 			hash_2_Lash(status[index].name, name_Lashed);
-			printf("%s \n    %s\n\n", name_Lashed, conv_Situation[status[index].last_Situation+1]);
+			printf("%s \n    %s", name_Lashed, conv_Situation[status[index].last_Situation+1]);
+			printf("\t\\  version: %d\n\n", status[index].last_Ver);
 		}
 }
 
@@ -663,8 +675,7 @@ int main(){
 			
 		if(!chdir("vc_data")){
 			chdir("..");
-			if(!init)
-				status_Get(path);
+			status_Get(path);
 			init = 1;
 		}
 		
