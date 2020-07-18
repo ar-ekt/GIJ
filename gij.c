@@ -408,7 +408,12 @@ void reset_(char path[], int commitId){
 		clean(name_Lashed);
 		hash_2_Lash(status[index].name, name_Lashed);
 		
-		if(0 <= status[index].all_Situation[commitId-1] && status[index].all_Situation[commitId-1] <= 2){
+		if(commitId == 0){
+			sprintf(path_Des, "%s\\%s", path, name_Lashed);
+			remove(path_Des);
+		}
+		
+		else if(0 <= status[index].all_Situation[commitId-1] && status[index].all_Situation[commitId-1] <= 2){
 			
 			// delete the verison in main folder
 			if(status[index].last_Situation >= 0){
@@ -431,6 +436,10 @@ void reset_(char path[], int commitId){
 			make_Copy(path_Ori, name_Ori, path, name_Lashed);
 			sprintf(buffer, "%s\\%s", path_Ori, name_Ori);
 			remove(buffer);
+		}
+		else if(status[index].all_Situation[commitId-1] == 3){
+			sprintf(path_Des, "%s\\%s", path, name_Lashed);
+			remove(path_Des);
 		}
 	}
 }
@@ -841,24 +850,28 @@ int main(){
 				printMessage("unknown command\n", "red");
 			else{
 				system("cls");
-				printMessage(
-					"cd <path>\t\t\t for change directory\n\n"
-					"mkdir <name>\t\t\t make directory by given name in current directory\n\n"
-					"init\t\t\t\t initial current directory\n\n"
-					"status\t\t\t\t show situation of files\n\n"
-					"select <file1> <file2> ...\t select given files\n\n"
-					"select -all\t\t\t select all files in current directory and sub-directories\n\n"
-					"unselect <file1> <file2> ...\t unselect given files\n\n"
-					"unselect -all\t\t\t unselect all selected files\n\n"
-					"selected\t\t\t show selected files\n\n"
-					"commit <description>\t\t commit selected files\n\n"
-					"log\t\t\t\t show allthings about commits\n\n"
-					"reset <commit-Id>\t\t reset files to id-th commit\n\n"
-					"reset -delete <commit-Id>\t\t reset files to id-th commit and delete all commits between last commit to given commit\n\n"
-					"stash <commit-Id>\t\t bla bla bla\n\n"
-					"stash pop\t\t\t bla bla bla\n\n"
-					, "blue"
-				);
+				char star[MAX_ARRAY_SIZE] = "*************************************";
+				char help[][MAX_ARRAY_SIZE] = {
+					"cd <path>\t\t\t for change directory\n",
+					"mkdir <name>\t\t\t make directory by given name in current directory\n",
+					"init\t\t\t\t initial current directory\n",
+					"status\t\t\t\t show situation of files\n",
+					"select <file1> <file2> ...\t select given files\n",
+					"select -all\t\t\t select all files in current directory and sub-directories\n",
+					"unselect <file1> <file2> ...\t unselect given files\n",
+					"unselect -all\t\t\t unselect all selected files\n",
+					"selected\t\t\t show selected files\n",
+					"commit <description>\t\t commit selected files\n",
+					"log\t\t\t\t show allthings about commits\n",
+					"reset <commit-Id>\t\t reset files to id-th commit\n",
+					"reset -delete <commit-Id>\t delete all changes from id-th commit to the end\n",
+					"stash <commit-Id>\t\t bla bla bla\n",
+					"stash pop\t\t\t bla bla bla\n"};
+				
+				for(index=0; index<15; index++){
+					printMessage(help[index], "blue");
+					printMessage("\n*************************************\n\n", "yellow");
+				}
 			}
 		}
 		
@@ -1014,12 +1027,9 @@ int main(){
 				else{
 					if(isNumerical(input[2])){
 						int commitId = atoi(input[2]);
-						if(1 <= commitId && commitId < number_Of_Commit){
+						if(0 <= commitId && commitId < number_Of_Commit){
 							reset_And_Delete(path, commitId);
 							printMessage("reset-and-delete done succesfully\n", "green");
-						}
-						else if(commitId == 0){
-							printMessage("not supported in this verion\n", "yellow");
 						}
 						else
 							printMessage("Invalid commit-Id!\n", "red");
@@ -1031,12 +1041,9 @@ int main(){
 			}
 			else if(isNumerical(input[1])){
 				int commitId = atoi(input[1]);
-				if(1 <= commitId && commitId < number_Of_Commit){
+				if(0 <= commitId && commitId < number_Of_Commit){
 					reset_(path, commitId);
 					printMessage("reset done succesfully\n", "green");
-				}
-				else if(commitId == 0){
-					printMessage("not supported in this verion\n", "yellow");
 				}
 				else
 					printMessage("Invalid commit-Id!\n", "red");
