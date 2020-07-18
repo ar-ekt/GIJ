@@ -77,7 +77,6 @@ int changeColor(char color[]){
  * then change color to the second color
  * 
  * @param firstColor should be color MACRO defiened in mainGlobal.h we want message to be printed in that color
- * @param secondColor should be color MACRO defiened in mainGlobal.h we want get nack to after printing the message
  * @param message is the message itself we want to print
  *
  */
