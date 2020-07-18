@@ -289,14 +289,14 @@ void situation_Update(char path[]){
 }
 
 /** 
- * This function reset commits to given Id
+ * This function reset commits to given Id and delete all commits between now to given id
  * 
  * @param path address of main folder
  * @param commitId ...
  *
  */
 
-void reset(char path[], int commitId){
+void reset_And_Delete(char path[], int commitId){
 	int index, indexV, ban=0;
 	char path_Des[MAX_ARRAY_SIZE];
 	char path_Ori[MAX_ARRAY_SIZE];
@@ -377,6 +377,62 @@ void reset(char path[], int commitId){
 	}
 	number_Of_Commit = commitId;
 	status_Update(path, ban);
+}
+
+/** 
+ * This function reset commits to given Id
+ * 
+ * @param path address of main folder
+ * @param commitId ...
+ *
+ */
+
+void reset_(char path[], int commitId){
+	int index, indexV;
+	char path_Des[MAX_ARRAY_SIZE];
+	char path_Ori[MAX_ARRAY_SIZE];
+	char path_Res[MAX_ARRAY_SIZE];
+	char name_Lashed[MAX_ARRAY_SIZE];
+	char name_Ori[MAX_ARRAY_SIZE];
+	char formatV[MAX_ARRAY_SIZE];
+	char command[MAX_ARRAY_SIZE];
+	char buffer[MAX_ARRAY_SIZE];
+	
+	status_Get(path);
+	
+	for(index=0; index<status_Len; index++){
+		
+		clean(formatV);
+		get_Format(status[index].name, formatV);
+		
+		clean(name_Lashed);
+		hash_2_Lash(status[index].name, name_Lashed);
+		
+		if(0 <= status[index].all_Situation[commitId-1] && status[index].all_Situation[commitId-1] <= 2){
+			
+			// delete the verison in main folder
+			if(status[index].last_Situation >= 0){
+				sprintf(path_Des, "%s\\%s", path, name_Lashed);
+				remove(path_Des);
+			}
+			
+			for(indexV=1; indexV<status[index].all_Ver[commitId-1]; indexV++){
+				sprintf(path_Ori, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV, formatV);
+				sprintf(path_Des, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV+1, ".txt");
+				sprintf(path_Res, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV+1, formatV);
+				sprintf(command, "patch0.exe %s %s %s", path_Ori, path_Des, path_Res);
+				system(command);
+				if(indexV != 1)
+					remove(path_Ori);
+			}
+			
+			sprintf(path_Ori, "%s\\vc_data\\files\\%s", path, status[index].name);
+			sprintf(name_Ori, "%d%s", status[index].all_Ver[commitId-1], formatV);
+			make_Copy(path_Ori, name_Ori, path, name_Lashed);
+			sprintf(buffer, "%s\\%s", path_Ori, name_Ori);
+			remove(buffer);
+		}
+	}
 }
 
 /** 
@@ -798,6 +854,7 @@ int main(){
 					"commit <description>\t\t commit selected files\n\n"
 					"log\t\t\t\t show allthings about commits\n\n"
 					"reset <commit-Id>\t\t reset files to id-th commit\n\n"
+					"reset -delete <commit-Id>\t\t reset files to id-th commit and delete all commits between last commit to given commit\n\n"
 					"stash <commit-Id>\t\t bla bla bla\n\n"
 					"stash pop\t\t\t bla bla bla\n\n"
 					, "blue"
@@ -947,18 +1004,39 @@ int main(){
 		}
 		
 		else if(!strcasecmp(input[0], "reset")){
-			if(input_Len != 2)
+			if(input_Len > 3)
 				printMessage("unknown command!\n", "red");
 			else if(!init)
 				printMessage("no permission!\n", "yellow");
-			if(isNumerical(input[1])){
+			else if(!strcmp(input[1], "-delete")){
+				if(input_Len != 3)
+					printMessage("unknown command!\n", "red");
+				else{
+					if(isNumerical(input[2])){
+						int commitId = atoi(input[2]);
+						if(1 <= commitId && commitId < number_Of_Commit){
+							reset_And_Delete(path, commitId);
+							printMessage("reset-and-delete done succesfully\n", "green");
+						}
+						else if(commitId == 0){
+							printMessage("not supported in this verion\n", "yellow");
+						}
+						else
+							printMessage("Invalid commit-Id!\n", "red");
+					}
+					else{
+						printMessage("commit-Id must be numerical!\n", "red");
+					}
+				}
+			}
+			else if(isNumerical(input[1])){
 				int commitId = atoi(input[1]);
 				if(1 <= commitId && commitId < number_Of_Commit){
-					reset(path, commitId);
+					reset_(path, commitId);
 					printMessage("reset done succesfully\n", "green");
 				}
 				else if(commitId == 0){
-					int n = 1;
+					printMessage("not supported in this verion\n", "yellow");
 				}
 				else
 					printMessage("Invalid commit-Id!\n", "red");
@@ -973,6 +1051,8 @@ int main(){
 				printMessage("unknown command!\n", "red");
 			else if(!init)
 				printMessage("no permission!\n", "yellow");
+			else
+				printMessage("not supported in this version!\n", "yellow");
 		}
 		
 		else
