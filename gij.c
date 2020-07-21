@@ -7,6 +7,12 @@
 #define MAX_ARRAY_SIZE 300
 
 /**
+ * address of current code(gij.exe) is running
+**/
+
+char gij_Path[MAX_ARRAY_SIZE];
+
+/**
  * a temp array for saving situation of files
 **/
 
@@ -310,7 +316,7 @@ void reset_And_Delete(char path[], int commitId){
 	
 	// delete descriptions
 	for(index=commitId+1; index<=number_Of_Commit; index++){
-		sprintf(path_Des, "%s\\vc_data\\descriptions\\%d.txt", path, index);
+		sprintf(path_Des, "%s\\vc_data\\descriptions\\des%d.txt", path, index);
 		remove(path_Des);
 	}
 	
@@ -331,7 +337,7 @@ void reset_And_Delete(char path[], int commitId){
 			}
 			
 			for(indexV=status[index].all_Ver[commitId-1]+1; indexV<=status[index].last_Ver; indexV++){
-				sprintf(path_Des, "%s\\vc_data\\files\\%s\\%d.txt", path, status[index].name, indexV);
+				sprintf(path_Des, "%s\\vc_data\\files\\%s\\dif%d.txt", path, status[index].name, indexV);
 				remove(path_Des);
 			}
 			
@@ -340,9 +346,9 @@ void reset_And_Delete(char path[], int commitId){
 			
 			for(indexV=1; indexV<status[index].all_Ver[commitId-1]; indexV++){
 				sprintf(path_Ori, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV, formatV);
-				sprintf(path_Des, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV+1, ".txt");
+				sprintf(path_Des, "%s\\vc_data\\files\\%s\\dif%d%s", path, status[index].name, indexV+1, ".txt");
 				sprintf(path_Res, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV+1, formatV);
-				sprintf(command, "patch0.exe %s %s %s", path_Ori, path_Des, path_Res);
+				sprintf(command, "%s\\patch0.exe %s %s %s", gij_Path, path_Ori, path_Des, path_Res);
 				system(command);
 				if(indexV != 1)
 					remove(path_Ori);
@@ -360,7 +366,7 @@ void reset_And_Delete(char path[], int commitId){
 			}
 			
 			for(indexV=1; indexV<=status[index].last_Ver; indexV++){
-				sprintf(path_Ori, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV, ".txt");
+				sprintf(path_Ori, "%s\\vc_data\\files\\%s\\dif%d%s", path, status[index].name, indexV, ".txt");
 				remove(path_Ori);
 				if(indexV == 1 || indexV == status[index].last_Ver){
 					sprintf(path_Ori, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV, formatV);
@@ -408,38 +414,42 @@ void reset_(char path[], int commitId){
 		clean(name_Lashed);
 		hash_2_Lash(status[index].name, name_Lashed);
 		
-		if(commitId == 0){
-			sprintf(path_Des, "%s\\%s", path, name_Lashed);
-			remove(path_Des);
-		}
+		// delete the verison in main folder
+		sprintf(path_Des, "%s\\%s", path, name_Lashed);
+		remove(path_Des);
 		
-		else if(0 <= status[index].all_Situation[commitId-1] && status[index].all_Situation[commitId-1] <= 2){
-			
-			// delete the verison in main folder
-			if(status[index].last_Situation >= 0){
-				sprintf(path_Des, "%s\\%s", path, name_Lashed);
-				remove(path_Des);
+		if(0 <= status[index].all_Situation[commitId-1] && status[index].all_Situation[commitId-1] <= 2){
+			if(status[index].all_Ver[commitId-1] != status[index].last_Ver){
+				// make the wnated verion of file step by step
+				for(indexV=1; indexV<status[index].all_Ver[commitId-1]; indexV++){
+					sprintf(path_Ori, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV, formatV);
+					sprintf(path_Des, "%s\\vc_data\\files\\%s\\dif%d%s", path, status[index].name, indexV+1, ".txt");
+					sprintf(path_Res, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV+1, formatV);
+					sprintf(command, "%s\\patch0 %s %s %s", gij_Path, path_Ori, path_Des, path_Res);
+					system(command);
+					if(indexV != 1){
+						remove(path_Ori);
+						puts(path_Ori);
+					}
+				}
+				
+				// copy wanted version of the file into main folder
+				sprintf(path_Ori, "%s\\vc_data\\files\\%s", path, status[index].name);
+				sprintf(name_Ori, "%d%s", status[index].all_Ver[commitId-1], formatV);
+				make_Copy(path_Ori, name_Ori, path, name_Lashed);
+				
+				// remove 
+				if(status[index].all_Ver[commitId-1] != 1){
+					sprintf(buffer, "%s\\%s", path_Ori, name_Ori);
+					remove(buffer);
+				}
 			}
-			
-			for(indexV=1; indexV<status[index].all_Ver[commitId-1]; indexV++){
-				sprintf(path_Ori, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV, formatV);
-				sprintf(path_Des, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV+1, ".txt");
-				sprintf(path_Res, "%s\\vc_data\\files\\%s\\%d%s", path, status[index].name, indexV+1, formatV);
-				sprintf(command, "patch0.exe %s %s %s", path_Ori, path_Des, path_Res);
-				system(command);
-				if(indexV != 1)
-					remove(path_Ori);
+			else{
+				// copy wanted version of the file into main folder
+				sprintf(path_Ori, "%s\\vc_data\\files\\%s", path, status[index].name);
+				sprintf(name_Ori, "%d%s", status[index].all_Ver[commitId-1], formatV);
+				make_Copy(path_Ori, name_Ori, path, name_Lashed);
 			}
-			
-			sprintf(path_Ori, "%s\\vc_data\\files\\%s", path, status[index].name);
-			sprintf(name_Ori, "%d%s", status[index].all_Ver[commitId-1], formatV);
-			make_Copy(path_Ori, name_Ori, path, name_Lashed);
-			sprintf(buffer, "%s\\%s", path_Ori, name_Ori);
-			remove(buffer);
-		}
-		else if(status[index].all_Situation[commitId-1] == 3){
-			sprintf(path_Des, "%s\\%s", path, name_Lashed);
-			remove(path_Des);
 		}
 	}
 }
@@ -481,28 +491,27 @@ void delete_Not_Commited(char path[], char selected[][MAX_ARRAY_SIZE], int selec
  *
  */
 
-int stash_(char path[], int commitId, char selected[][MAX_ARRAY_SIZE], int selected_Len, char stashed[][MAX_ARRAY_SIZE], int stashed_Len){
-	int index;
-	char copy_Addr[MAX_ARRAY_SIZE];
-	char copy_Name[MAX_ARRAY_SIZE];
+void stash_(char path[], int commitId, char selected[][MAX_ARRAY_SIZE], int selected_Len, char stashed[][MAX_ARRAY_SIZE], int stashed_Len){
 	char hashed_Name[MAX_ARRAY_SIZE];
+	char stash_Addr[MAX_ARRAY_SIZE];
+	char main_Addr[MAX_ARRAY_SIZE];
+	int index;
 	
 	for(index=0; index<stashed_Len; index++){
-		sprintf(copy_Addr, "%s\\vc_data\\stash\\%s", path, stashed[index]);
-		remove(copy_Addr);
+		sprintf(stash_Addr, "%s\\vc_data\\stash\\%s", path, stashed[index]);
+		remove(stash_Addr);
 	}
-	stashed_Len = 0;
 	
 	for(index=0; index<selected_Len; index++){
 		lash_2_Hash(selected[index], hashed_Name);
-		if(dict_Index(hashed_Name) == -1){
-			sprintf(copy_Addr, "%s\\vc_data\\stash", path);
-			make_Copy(path, selected[index], copy_Addr, hashed_Name);
-			strcpy(stashed[stashed_Len++], hashed_Name);
-		}
+		
+		sprintf(stash_Addr, "%s\\vc_data\\stash", path);
+		make_Copy(path, selected[index], stash_Addr, hashed_Name);
+		strcpy(stashed[index], hashed_Name);
+		
+		sprintf(main_Addr, "%s\\%s", path, selected[index]);
+		remove(main_Addr);
 	}
-	
-	return stashed_Len;
 }
 
 /** 
@@ -516,13 +525,13 @@ int stash_(char path[], int commitId, char selected[][MAX_ARRAY_SIZE], int selec
 
 void stash_Pop(char path[], char stashed[][MAX_ARRAY_SIZE], int stashed_Len){
 	int index;
-	char copy_Addr[MAX_ARRAY_SIZE];
+	char stash_Addr[MAX_ARRAY_SIZE];
 	char lashed_Name[MAX_ARRAY_SIZE];
 	
 	for(index=0; index<stashed_Len; index++){
-		sprintf(copy_Addr, "%s\\vc_data\\stash", path);
+		sprintf(stash_Addr, "%s\\vc_data\\stash", path);
 		hash_2_Lash(stashed[index], lashed_Name);
-		make_Copy(copy_Addr, stashed[index], path, lashed_Name);
+		make_Copy(stash_Addr, stashed[index], path, lashed_Name);
 	}
 }
 
@@ -587,7 +596,7 @@ void commit(char path[], char selected[][MAX_ARRAY_SIZE], int numberOS){
 			sprintf(buffer, "%d%s", verOS+1, formatOS);
 			make_Copy(path, selected[indexOS], pathOS, buffer);
 			
-			sprintf(command, "diff0.exe %s\\%d%s %s\\%d%s %s\\%d%s", pathOS, verOS, formatOS, pathOS, verOS+1, formatOS, pathOS, verOS+1, ".txt");
+			sprintf(command, "%s\\diff0 %s\\%d%s %s\\%d%s %s\\dif%d%s", gij_Path, pathOS, verOS, formatOS, pathOS, verOS+1, formatOS, pathOS, verOS+1, ".txt");
 			system(command);
 			
 			if(verOS != 1){
@@ -625,13 +634,13 @@ void log_(char path[]){
 	
 	system("cls");
 	
-	printMessage("\nLogs\n\n", "blue");
+	printMessage("\nLogs\n\n\n", "blue");
 	if(number_Of_Commit == 0)
 		printMessage("nothing to show\n", "yellow");
 	for(index=0; index<number_Of_Commit; index++){
 		sprintf(message, "commit-Id: %d\n", index+1);
 		printMessage(message, "purple");
-		sprintf(pathD, "%s\\vc_data\\descriptions\\%d.txt", path, index+1);
+		sprintf(pathD, "%s\\vc_data\\descriptions\\des%d.txt", path, index+1);
 		des = fopen(pathD, "r");
 		fgets(description, sizeof(description), des);
 		sprintf(message, "description: %s\n\n", description);
@@ -670,7 +679,7 @@ void status_(char path[]){
 	
 	system("cls");
 	
-	printMessage("\nStatus of files\n\n", "green");
+	printMessage("\nStatus of files\n\n\n", "blue");
 	if(status_Len == 0)
 		printMessage("nothing to show\n", "yellow");
 	for(index=0; index<status_Len; index++)
@@ -724,6 +733,7 @@ int try_Unselect(char file[], char selected[][MAX_ARRAY_SIZE], int selected_Len)
 		if(!strcmp(selected[index], file)){
 			for(shift=index; shift<selected_Len-1; shift++)
 				strcpy(selected[shift], selected[shift+1]);
+			clean(selected[shift]);
 			return 1;
 		}
 	return 0;
@@ -758,7 +768,7 @@ int is_Dir(char pre[], char file[]){
  *
  */
 
-int select_All(char path[], char cur_Dir[], char selected[][MAX_ARRAY_SIZE], int selected_Len){
+int select_All(char path[], char cur_Dir[], char selected[][MAX_ARRAY_SIZE], int selected_Len, int type){
 	char file_Name[MAX_ARRAY_SIZE];
 	char temp_Dir[MAX_ARRAY_SIZE];
 	
@@ -777,10 +787,10 @@ int select_All(char path[], char cur_Dir[], char selected[][MAX_ARRAY_SIZE], int
 		else
 			sprintf(temp_Dir, "%s\\%s", cur_Dir, file_Name);
 			
-		if(is_Dir(path, temp_Dir)) // check file is directory or not
-			selected_Len = select_All(path, temp_Dir, selected, selected_Len);
-		else
+		if(type == 1 || !is_Dir(path, temp_Dir)) // file not a directory or this finvtion is used for "dir command
 			strcpy(selected[selected_Len++], temp_Dir);
+		else
+			selected_Len = select_All(path, temp_Dir, selected, selected_Len, 2);
 	}
 	
 	return selected_Len;
@@ -861,21 +871,26 @@ void show_Screen(){
 
 int main(){
 	char conv_Situation[][MAX_ARRAY_SIZE] = {"deleted", "unchanged", "changed", "recently"};
-	char line[MAX_ARRAY_SIZE];
-	char input[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
-	char path[MAX_ARRAY_SIZE];
 	char selected[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
+	char dir_List[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
+	char stashed[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
+	char input[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
 	char description[MAX_ARRAY_SIZE];
 	char message[MAX_ARRAY_SIZE];
+	char buffer2[MAX_ARRAY_SIZE];
 	char buffer[MAX_ARRAY_SIZE];
-	char stashed[MAX_ARRAY_SIZE][MAX_ARRAY_SIZE];
+	char line[MAX_ARRAY_SIZE];
+	char path[MAX_ARRAY_SIZE];
 	
-	int stashed_Len = 0;
 	int selected_Len = 0;
+	int stashed_Len = 0;
+	int dir_Len = 0;
 	int input_Len;
 	int index = 0;
 	int init = 0;
 	int pop = -1;
+	
+	getcwd(gij_Path, sizeof(gij_Path));
 	
 	while(1){
 		
@@ -901,10 +916,25 @@ int main(){
 		
 		printf("\n\n");
 		
-		if(!strcasecmp(input[0], "cd")){
+		if(!strcasecmp(input[0], "dir")){
+			if(input_Len != 1)
+				printMessage("Invalid command!\n", "red");
+			else{
+				strcpy(buffer, ".");
+				dir_Len = select_All(path, buffer, dir_List, 0, 1);
+				system("cls");
+				printMessage("\nFiles in current directory\n\n\n", "blue");
+				for(index=0; index<dir_Len; index++){
+					printMessage(dir_List[index], "light-blue");
+					printf("\n\n");
+				}
+			}
+		}
+		
+		else if(!strcasecmp(input[0], "cd")){
 			if(input_Len > 2)
 				printMessage("Invalid command!\n", "red");
-			else if(!strcmp(input[1], "vc_data") && init)
+			else if(!strcmp(input[1], "vc_data"))
 				printMessage("no permission!\n", "yellow");
 			else if(!chdir(input[1])){
 				printMessage("directory changed succesfully!\n", "green");
@@ -926,7 +956,7 @@ int main(){
 				printMessage(message, "green");
 			}
 			else{
-				sprintf(message, "%s directory already exist|!\n", input[1]);
+				sprintf(message, "%s directory already exist!\n", input[1]);
 				printMessage(message, "yellow");
 			}
 		}
@@ -938,6 +968,7 @@ int main(){
 				system("cls");
 				char star[MAX_ARRAY_SIZE] = "*************************************";
 				char help[][MAX_ARRAY_SIZE] = {
+					"dir\t\t\t  show files in current directory\n",
 					"cd <path>\t\t\t for change directory\n",
 					"mkdir <name>\t\t\t make directory by given name in current directory\n",
 					"init\t\t\t\t initial current directory\n",
@@ -954,7 +985,7 @@ int main(){
 					"stash <commit-Id>\t\t bla bla bla\n",
 					"stash pop\t\t\t bla bla bla\n"};
 				
-				for(index=0; index<15; index++){
+				for(index=0; index<16; index++){
 					printMessage(help[index], "blue");
 					printMessage("\n*************************************\n\n", "yellow");
 				}
@@ -1003,7 +1034,7 @@ int main(){
 					int temp_Len = selected_Len;
 					strcpy(buffer, ".");
 					selected_Len = 0;
-					selected_Len = select_All(path, buffer, selected, selected_Len);
+					selected_Len = select_All(path, buffer, selected, selected_Len, 2);
 					printMessage("all files in directory and its subdirectories selected succesfully\n\n", "green");
 					sprintf(message, "%d file selected succesfully\n", selected_Len - temp_Len);
 					printMessage(message, "green");
@@ -1043,14 +1074,15 @@ int main(){
 			else{
 				for(index=1; index<input_Len; index++){
 					if(check_File(path, input[index])){
-						if(!try_Unselect(input[index], selected, selected_Len)){
-							sprintf(message, "%s has not been selected\n\n", input[index]);
-							printMessage(message, "yellow");
-						}
-						else{
+						if(try_Unselect(input[index], selected, selected_Len)){
 							sprintf(message, "%s unselected succesfully\n\n", input[index]);
+							selected_Len -= 1;
 							printMessage(message, "green");
 							pop = -1;
+						}
+						else{
+							sprintf(message, "%s has not been selected\n\n", input[index]);
+							printMessage(message, "yellow");
 						}
 					}
 					else{
@@ -1077,7 +1109,7 @@ int main(){
 				printMessage("no permission!\n", "yellow");
 			else{
 				// add description
-				sprintf(buffer, "%s\\vc_data\\descriptions\\%d.txt", path, number_Of_Commit+1);
+				sprintf(buffer, "%s\\vc_data\\descriptions\\des%d.txt", path, number_Of_Commit+1);
 				strcpy(description, input[1]);
 				for(index=2; index<input_Len; index++){
 					strcat(description, input[index]);
@@ -1127,7 +1159,7 @@ int main(){
 							reset_And_Delete(path, commitId);
 							strcpy(buffer, ".");
 							selected_Len = 0;
-							selected_Len = select_All(path, buffer, selected, selected_Len);
+							selected_Len = select_All(path, buffer, selected, selected_Len, 2);
 							delete_Not_Commited(path, selected, selected_Len);
 							selected_Len = 0;
 							printMessage("reset-and-delete done succesfully\n", "green");
@@ -1142,13 +1174,8 @@ int main(){
 			}
 			else if(isNumerical(input[1])){
 				int commitId = atoi(input[1]);
-				if(0 <= commitId && commitId < number_Of_Commit){
+				if(0 <= commitId && commitId <= number_Of_Commit){
 					reset_(path, commitId);
-					strcpy(buffer, ".");
-					selected_Len = 0;
-					selected_Len = select_All(path, buffer, selected, selected_Len);
-					delete_Not_Commited(path, selected, selected_Len);
-					selected_Len = 0;
 					printMessage("reset done succesfully\n", "green");
 				}
 				else
@@ -1160,7 +1187,7 @@ int main(){
 		}
 		
 		else if(!strcasecmp(input[0], "stash")){
-			if(1)
+			if(0)
 				printMessage("not supported in this version!\n", "yellow");
 			else{
 				if(input_Len != 2)
@@ -1182,17 +1209,19 @@ int main(){
 				}
 				else if(isNumerical(input[1])){
 					int commitId = atoi(input[1]);
-					if(1 <= commitId && commitId < number_Of_Commit){
-						stashed_Len = stash_(path, commitId, selected, selected_Len, stashed, stashed_Len);
-						reset_(path, commitId);
-						
+					if(1 <= commitId && commitId <= number_Of_Commit){
 						strcpy(buffer, ".");
-						selected_Len = 0;
-						selected_Len = select_All(path, buffer, selected, selected_Len);
-						delete_Not_Commited(path, selected, selected_Len);
-						selected_Len = 0;
-						pop = 0;
+						selected_Len = select_All(path, buffer, selected, 0, 2);
 						
+						sprintf(buffer2, "%s\\vc_data\\stash", path);
+						stashed_Len = select_All(buffer2, buffer, stashed, 0, 2);
+						
+						stash_(path, commitId, selected, selected_Len, stashed, stashed_Len);
+						reset_(path, commitId);
+						stashed_Len = selected_Len;
+						selected_Len = 0;
+						
+						pop = 0;
 						printMessage("stash done succesfully\n", "green");
 					}
 					else
