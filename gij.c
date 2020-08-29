@@ -79,16 +79,15 @@ int changeColor(char color[]){
 }
 
 /** 
- * This function gets two color MACROs defiened in mainGlobal.h and a message to be printed in first color and
- * then change color to the second color
+ * This function get a message and output it with the given color
  * 
- * @param firstColor should be color MACRO defiened in mainGlobal.h we want message to be printed in that color
  * @param message is the message itself we want to print
+ * @param color of the message
  *
  */
 
-void printMessage(char message[], char firstColor[]){
-	changeColor(firstColor);
+void printMessage(char message[], char color[]){
+	changeColor(color);
 	printf(message);
 	changeColor("white");
 }
